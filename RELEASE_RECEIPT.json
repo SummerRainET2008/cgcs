@@ -26,7 +26,7 @@
   },
   "publication": {
     "license": "MIT",
-    "repository": "https://github.com/SummerRainET2008/071.open-source.p011.cgcs"
+    "repository": "https://github.com/SummerRainET2008/cgcs"
   },
   "publication_blockers": [
     "The arXiv identifier must be added to CITATION.cff after submission."

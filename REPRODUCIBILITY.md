@@ -1,7 +1,7 @@
 # Reproducibility map
 
 Canonical repository:
-[SummerRainET2008/071.open-source.p011.cgcs](https://github.com/SummerRainET2008/071.open-source.p011.cgcs).
+[SummerRainET2008/cgcs](https://github.com/SummerRainET2008/cgcs).
 The released code is licensed under MIT.
 
 ## Environment

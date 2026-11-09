@@ -5,7 +5,7 @@ type: software
 version: 1.0.0
 date-released: 2026-11-08
 license: MIT
-repository-code: "https://github.com/SummerRainET2008/071.open-source.p011.cgcs"
+repository-code: "https://github.com/SummerRainET2008/cgcs"
 authors:
   - family-names: "Xia"
     given-names: "Cyrus Tian"

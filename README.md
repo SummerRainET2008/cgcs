@@ -62,7 +62,7 @@ processes and machines.
 ## Public release status
 
 The canonical public repository is
-[SummerRainET2008/071.open-source.p011.cgcs](https://github.com/SummerRainET2008/071.open-source.p011.cgcs).
+[SummerRainET2008/cgcs](https://github.com/SummerRainET2008/cgcs).
 The code is released under the MIT License. The manifest, compact evidence,
 protocols, and negative or unresolved results are part of the public record.
 
