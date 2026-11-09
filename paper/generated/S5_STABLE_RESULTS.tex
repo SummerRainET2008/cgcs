@@ -1,0 +1,19 @@
+\begin{table}[t]
+\caption{Prospectively frozen S5 best-of-2 low-update confirmation with token-level stability diagnostics. Evaluation entries pool 400 sealed examples over two seeds; stability entries are medians over two seeds and two rounds. ``Seq.'' is the logged product-ratio diagnostic, whereas ``Tok.'' measures selected Actor tokens.}
+\label{tab:s5-stable}
+\centering
+\scriptsize
+\resizebox{\linewidth}{!}{
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Arm & H8 acc. & H8 ans. & H16 acc. & H16 ans. & Seq. clip (\%) & Seq. sat. (\%) & Tok. clip (\%) & Tok. sat. (\%)\\
+\midrule
+K1 & 35.75 & 40.00 & 53.50 & 61.75 & 27.17 & 14.13 & 0.77 & 0.42\\
+\Ezero & 33.25 & 38.50 & 52.25 & 61.50 & 25.10 & 12.89 & 0.73 & 0.41\\
+\Eone & 34.50 & 39.50 & 52.25 & 61.00 & 27.16 & 13.69 & 0.77 & 0.42\\
+\Ethree & 34.00 & 40.00 & 53.25 & 62.50 & 29.12 & 14.66 & 0.83 & 0.45\\
+\bottomrule
+\end{tabular}}
+\end{table}
+\paragraph{S5 result.}
+Neither calibration rate passes the original sequence-ratio gate, so the lower pre-specified fallback rate \(10^{-6}\) is used. At that rate the selected-token clip fraction is below \(1\%\) for every arm and the sign-aware token saturation fraction is about \(0.4\%\), including K1; the original sequence-product gate is therefore retained as the registered decision rule but is not interpreted as a token-level clipping rate. At H8, \Eone{}--\Ezero{} is \(+1.25\) points (\(95\%\) CI \([-0.50,+3.25]\)) and \Ethree{}--\Ezero{} is \(+0.75\) (\([-1.00,+2.50]\)); at H16 they are \(0.00\) (\([-1.75,+1.75]\)) and \(+1.00\) (\([-1.00,+3.00]\)). H16 raises accuracy by \(17.75\)--\(19.25\) points and answer rate by \(21.50\)--\(23.00\) points across arms, but does not reveal a resolved correction advantage.

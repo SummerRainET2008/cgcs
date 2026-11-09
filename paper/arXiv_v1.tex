@@ -1,0 +1,566 @@
+\documentclass[10pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{times}
+\usepackage[round,authoryear]{natbib}
+\input{math_commands.tex}
+\usepackage{amsmath,amssymb}
+\usepackage{amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+  hidelinks,
+  pdftitle={When Search Is Not On-Policy: Correcting Search-Induced Policy Mismatch in Language Model RL},
+  pdfauthor={Cyrus Tian Xia and Shenghua He},
+  pdfsubject={Search-induced policy mismatch in language model reinforcement learning},
+  pdfkeywords={language model reinforcement learning, search, off-policy correction, importance sampling, PPO}
+}
+\usepackage{url}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.35em plus 0.1em minus 0.1em}
+\setlength{\emergencystretch}{1em}
+\pagestyle{plain}
+
+\title{When Search Is Not On-Policy: Correcting\\
+Search-Induced Policy Mismatch in Language Model RL}
+
+\author{%
+Cyrus Tian Xia\\
+\textit{PAII}\\
+\texttt{tianxia0209@gmail.com}
+\and
+Shenghua He\\
+\textit{Amazon}\\
+\texttt{shenghh2015@gmail.com}%
+}
+\date{}
+
+\newcommand{\method}{\textsc{CGCS}}
+\newcommand{\Ezero}{\ensuremath{\mathrm{E0}}}
+\newcommand{\Eone}{\ensuremath{\mathrm{E1}}}
+\newcommand{\Etwo}{\ensuremath{\mathrm{E2}}}
+\newcommand{\Ethree}{\ensuremath{\mathrm{E3}}}
+\newcommand{\Efour}{\ensuremath{\mathrm{E4}}}
+\newcommand{\figroot}{figures}
+\newcommand{\terminalresults}{generated/S3_TERMINAL_RESULTS.tex}
+\newcommand{\stableresults}{generated/S5_STABLE_RESULTS.tex}
+\newtheorem{proposition}{Proposition}
+\newcommand{\evidencefigure}[3]{%
+  \begin{figure}[t]
+    \centering
+    \IfFileExists{#1}{\includegraphics[width=#2\linewidth]{#1}}{%
+      \fbox{\parbox[c][1.25in][c]{0.93\linewidth}{\centering
+      Evidence-locked figure is missing from this manuscript bundle.}}}
+    \caption{#3}
+  \end{figure}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Search, branching, and candidate selection can improve the trajectories used to
+train language-model policies, but they also change which states and actions
+reach the optimizer.  The ordinary PPO ratio corrects policy-version drift; it
+does not generally correct the allocation, generation, and retention law of a
+search procedure.  We formalize this \emph{search-induced policy mismatch},
+separate the raw-Actor objective from the retained composite-search objective,
+and compare no correction, joint trajectory propensity correction,
+executed-action marginalization, partial correction, and a retained-candidate
+objective.  On exact finite reasoning trees, full correction removes bias but
+can sharply reduce effective sample size; a development-frozen partial
+correction minimizes gradient MSE at smaller batches, while the MSE-optimal
+correction strength shifts toward full correction as batch size grows.  Critic ranking quality predicts whether induced shift is
+useful, whereas shift magnitude alone does not.  A pre-specified, hash-frozen three-seed
+Qwen3-4B study on MATH-500 finds no resolved transfer advantage for the
+corrected raw Actors or retained-composite objective, and all 72 search-training
+branches fail the original sequence-product stability gate.  A prospective
+two-seed low-update confirmation finds selected-token clip rates below one
+percent, yet no resolved \Eone{} or \Ethree{} advantage at either H8 or H16;
+longer decoding raises answer coverage and accuracy without changing that
+conclusion.  Cross-task stress tests on ARC-Challenge likewise find only
+sub-percentage-point unresolved effects, while an open-ended DROP test finds the
+raw \Efour{} Actor worse than all three registered baselines.  A two-seed
+segmentation diagnostic increases the number of search decisions without
+improving retained-composite accuracy.  Together these results support
+target-aware accounting and variance control, not a universal winning
+correction or automatic scale-up.
+\end{abstract}
+
+\section{Introduction}
+
+Search-augmented reinforcement learning (RL) is often described as collecting
+better on-policy data: candidates are sampled from the current Actor, a search
+or scorer retains promising continuations, and PPO updates the Actor using the
+usual new-to-old policy ratio~\citep{schulman2017ppo}.  The first clause does
+not imply the last.  Search changes the multiplicity of visited prefixes, the
+probability that an action survives selection, and the downstream occupancy of
+states.  Consequently, the retained training distribution can differ from the
+raw Actor even when every primitive generation call uses that Actor.
+
+This distinction matters because two reasonable objectives coexist.  One may
+wish to distill an improved search policy, in which case selection bias is part
+of the intended teacher distribution.  Alternatively, one may claim to
+estimate or improve the return of the deployed no-search Actor, in which case
+the same selected data require a target-aware correction.  Correct
+response-to-token credit assignment does not by itself correct search
+retention, and propensity correction does not repair an inaccurate continuation
+Value.
+
+We make four contributions.  First, we decompose search-generated data into
+allocation, candidate generation, retention, and temporal credit, and define a
+target-explicit estimator taxonomy.  Second, a frozen exact-tree matrix provides
+enumerated ground truth for bias, gradient MSE, effective sample size (ESS),
+occupancy shift, and post-update return.  Third, a pre-specified, hash-frozen MATH-500 study
+tests three search families under both no-search raw-Actor deployment and
+retained-composite inference, retaining failed gates and negative contrasts; a
+prospective low-update confirmation separates sequence-product and token-level
+clipping while repeating the estimator contrast at H8 and H16.  Fourth,
+task-specific ARC-Challenge and DROP studies test whether the same findings
+persist across task formats while probing answer coverage, horizon choice, and
+decision granularity.  The contribution is a target-aware empirical account,
+not a claim that one estimator universally wins.  Our contribution is a
+target-aware formalization and matched empirical audit of the behavior law
+induced by search-augmented LLM RL; we use classical weighting, marginalization,
+and shrinkage tools to isolate its statistical and optimization consequences.
+
+\evidencefigure{\figroot/figure_1_estimands_and_data_generation.pdf}{1.0}{%
+Search-generated training data decompose into allocation, candidate generation,
+retention, and credit.  The raw-Actor and retained composite-search objectives
+are different estimands.  VinePPO/TRePO-style continuation sampling belongs to
+the credit axis and need not correct search-selection propensity.}
+
+\section{Problem formulation}
+
+\subsection{Two target objectives}
+
+Let $\pi_\theta(a\mid s)$ be the raw Actor and let $R(\tau)$ be the terminal
+return of trajectory $\tau$.  The deployed no-search objective is
+\begin{equation}
+  J_{\mathrm{actor}}(\theta)
+  = \mathbb{E}_{\tau\sim p_{\pi_\theta}}[R(\tau)].
+  \label{eq:raw-objective}
+\end{equation}
+A search controller additionally chooses an allocation decision $g$, generates
+a candidate set $C$, and retains an action or continuation through $q$.  These
+operations induce a composite trajectory law $p_{\mathcal{S}_\phi(\pi_\theta)}$
+and a distinct objective
+\begin{equation}
+  J_{\mathrm{search}}(\theta,\phi)
+  = \mathbb{E}_{\tau\sim p_{\mathcal{S}_\phi(\pi_\theta)}}[R(\tau)].
+  \label{eq:search-objective}
+\end{equation}
+Optimizing Equation~\ref{eq:search-objective} can be useful, but it is not an
+unbiased estimator of Equation~\ref{eq:raw-objective} merely because candidate
+tokens came from $\pi_\theta$.
+
+\subsection{The missing search ratio}
+Let \(x\) be the retained state--action history and \(z\) latent allocation,
+candidate-set, and retention events.  If \(\mu_{\rm old}\) is the old search
+behavior, the complete raw-Actor ratio factors as
+\begin{equation}
+\frac{p_{\pi_\theta}(x)}{\mu_{\rm old}(x)}
+=\underbrace{\frac{p_{\pi_\theta}(x)}{p_{\pi_{\rm old}}(x)}}_{\text{policy drift}}
+ \underbrace{\frac{p_{\pi_{\rm old}}(x)}{\mu_{\rm old}(x)}}_{\text{search mismatch}}.
+\label{eq:ratio-factorization}
+\end{equation}
+Ordinary PPO addresses the first factor locally, not the second. If search
+removes support, reweighting retained samples cannot recover missing histories.
+
+For normalized \(\rho(z\mid x)\), let
+\(W_{\rm joint}=p_\pi(x)\rho(z\mid x)/\mu(x,z)\) and
+\(W_{\rm marg}=p_\pi(x)/\mu(x)\).
+\begin{proposition}[Exactness and marginalization]\leavevmode\par
+Both recover \(\mathbb E_{p_\pi}[h]\) for square-integrable \(h(x)\), and
+\(\operatorname{Var}_\mu(W_{\rm marg}h)\le
+\operatorname{Var}_\mu(W_{\rm joint}h)\).
+\end{proposition}
+\begin{proposition}[Augmentation variance]
+Conditioned on \(x\),
+\(\mathbb E_{\mu(z\mid x)}[W_{\rm joint}^2h^2]
+=W_{\rm marg}^2h^2[1+\chi^2(\rho(\cdot\mid x)\Vert\mu(\cdot\mid x))]\).
+Thus the marginal weight minimizes the conditional second moment.
+\end{proposition}
+Proofs are in Appendix~\ref{app:proofs}. In \Eone{}, IID Actor-drawn candidate
+positions yield logged factor \(1/(Kq_i)\) for selector probability \(q_i\);
+\Etwo{} marginalizes latent candidate paths when computable.
+
+\paragraph{Three axes.}
+Allocation selects prefixes for compute; retention selects candidates for the
+update; credit assignment supplies their advantages. Better credit does not
+undo allocation or retention propensity.
+
+\section{Target-aware estimators}
+\begin{table}[t]
+\caption{Estimator taxonomy. Exactness is relative to the named target.}
+\label{tab:estimators}\centering\small
+\begin{tabular}{llll}\toprule
+Est. & Information & Target & Tradeoff\\\midrule
+\Ezero & Actor ratio & distilled surrogate & selection bias\\
+\Eone & joint propensity & raw Actor & product variance\\
+\Etwo & action marginal & raw Actor & computation\\
+\Ethree & partial ratio & raw Actor & residual bias\\
+\Efour & retained set & composite search & different target\\\bottomrule
+\end{tabular}
+\end{table}
+\Ezero{} treats selected actions as Actor data. \Eone{} multiplies inverse
+selection propensities; \Etwo{} Rao--Blackwellizes \Eone{} by marginalizing
+search events. \Ethree{} uses
+\(W_t^{(\lambda)}=\prod_{j\le t}[(1-\lambda)+\lambda w_j]\) with frozen
+\(\lambda=.75\), trading bias for finite-batch variance. The fixed estimator
+does not become unbiased with batch size; the MSE-optimal family member can
+move toward \(\lambda=1\). \Efour{} targets \(J_{\rm search}\), not
+\(J_{\rm actor}\).
+
+\subsection{Exact correction versus clipped PPO}
+Our implementation puts external search weight \(W_t\) outside the PPO clip:
+\begin{equation}
+L_{\rm clip}=\mathbb E_\mu[W_t\min\{r_tA_t,
+\operatorname{clip}(r_t,1-\epsilon,1+\epsilon)A_t\}].
+\label{eq:clipped-surrogate}
+\end{equation}
+Clipping, estimated advantages, Value/KL losses, and optimization mean that an
+exact \(W_t\) does not make the realized update unbiased. We call an estimator
+exact only for its stated unclipped expectation under support and correct logs.
+
+\section{Exact-tree evidence}
+
+\subsection{Frozen design}
+
+The confirmation matrix contains 30 committed finite MDPs, nine Critic
+conditions, and three search families: always-expanded best-of-2,
+entropy-gated K4, and low-Value-gated K4.  Each of the 810
+MDP--Critic--family cells uses ten manifested common-random-number streams and
+4,096 trajectories per stream.  Exact enumeration supplies raw-Actor and
+composite gradients, state-action occupancy, and return.  Development fixes all
+thresholds and $\lambda$ before confirmation.  Inference clusters by MDP rather
+than treating repeated Critic conditions as independent problems.
+
+\subsection{Bias, variance, and ESS}
+
+Under the exact Critic, \Ezero{} has mean relative raw-gradient bias of 36.91\%
+for best-of-2, 24.94\% for entropy-gated K4, and 23.41\% for low-Value-gated
+K4.  Both \Eone{} and \Etwo{} recover the exact target in expectation, but
+\Etwo{} has substantially lower batch-256 gradient MSE because it marginalizes
+latent search paths.  The development-frozen \Ethree{} has lower batch-256 MSE
+than both \Ezero{} and full \Etwo{} in all 27 Critic-by-family conditions.  At
+batch 1,024, the optimum moves toward full correction: \Ethree{} remains better
+for best-of-2, is unresolved for entropy-gated K4, and is slightly worse than
+\Etwo{} for the low-Value gate.  A post-hoc CPU-only decomposition of the
+frozen 810 cells using
+$\operatorname{MSE}(n)=\lVert\operatorname{Bias}\rVert^2+
+\operatorname{tr}(\Sigma)/n$ makes the transition explicit: \Ethree{} has
+lower descriptive MSE in 765 cells at $n=256$, 491 at $n=1{,}024$, and only 98
+at $n=4{,}096$; the median cellwise crossover is $n=1{,}350$.  These
+crossovers inherit Monte Carlo error and are diagnostic rather than a new
+pre-specified confirmation.
+
+\evidencefigure{\figroot/figure_2_exact_bias_variance_frontier.pdf}{1.0}{%
+Exact relative bias, gradient MSE at both frozen batch sizes, and normalized
+ESS for \Ezero--\Ethree{} across all search families.  No family or batch size
+is selected based on its outcome.}
+
+\subsection{Useful shift versus large shift}
+
+The exact Critic yields positive search gain, while the inverted Critic creates
+similar occupancy-shift magnitude but negative return effects.  Across exact,
+lagged, learned, noisy, and inverted Critics, ranking concordance tracks gain
+direction more closely than maximum-depth total variation.  Scalar Value and
+entropy are therefore incomplete value-of-computation signals: a state may
+need correction without offering diverse corrective actions, or offer diverse
+actions when correction is unnecessary.
+
+The frozen compute-matched gate study makes this limitation explicit.  At K4
+and expected-candidate budget 2.0, entropy gating improves composite return over
+random allocation by $+0.01575$ with a problem-clustered 95\% interval
+$[+0.00298,+0.02944]$.  The corresponding scalar-Value and
+Value--entropy-gate differences are $+0.00079$
+$[-0.01553,+0.01639]$ and $+0.00594$ $[-0.00670,+0.01874]$; neither is
+resolved.  A development-frozen linear gate using low Value, entropy, and their
+interaction has near-zero held-out correlation with oracle expansion gain.
+Policy-weighted dispersion and shape of per-Action Critic values are highly
+predictive diagnostics, but require already generated candidates, an
+uncertainty head, or an ensemble and therefore are not treated as free
+deployment signals.  Thus the intuitive four quadrants explain distinct
+``need'' and ``opportunity'' failure modes, but are not themselves an oracle
+value-of-computation rule.
+
+\evidencefigure{\figroot/figure_3_when_search_shift_helps_v4.pdf}{1.0}{%
+Search gain depends on Critic ranking direction, not only the magnitude of
+search-induced occupancy shift.  Oracle search-gain headroom is the exact-Critic
+gain minus the gain under each frozen Critic condition.}
+
+\section{Controlled LLM transfer}
+
+\subsection{Pre-specified design}
+
+We use Qwen3-4B and three training seeds.  Each seed shares a 48-problem
+burn-in, followed by two 48-problem adaptive rounds for best-of-$N$,
+entropy--Value branching, and Value/PRM rollout (hereafter,
+Value/PRM).  The estimator axis is
+\Ezero, \Eone, \Ethree, and \Efour.  All training completes before a sealed
+200-problem MATH-500 scalar partition is opened.  We evaluate 39 no-search raw
+K1 Actors and 36 retained composite systems, always on the same ordered problem
+IDs.  Candidate tokens, candidate forwards, selected tokens, registered target
+expansion, actual expansion on the round-two threshold-source rollout, actual
+sealed-evaluation expansion, wall time, GPU time, ESS, maximum weight, clip fraction, KL, Value
+calibration, and surface-form diversity are retained for audit.
+We define answer rate as the fraction of examples for which the frozen strict
+\texttt{FINAL:} extractor recovers a scalar answer within eight generation
+steps; it is not an explicit abstention or refusal probability.  We therefore
+also report accuracy conditional on a valid final and audit whether unanswered
+transcripts lack any final-like wording or use only noncanonical final-like
+wording.
+Raw-K1 decoding is greedy, whereas retained-composite candidate generation uses
+the frozen temperature 1.3 and common sampling seed 100901 for paired
+comparison.  Answer rate is therefore an empirical coverage statistic in both
+tables, not a per-problem abstention probability estimated by the model.
+
+\Etwo{} is evaluated on the exact trees but omitted from the LLM matrix because
+its executed-action marginal requires summing all candidate-set and selection
+paths that can produce the retained text.  That sum is exactly enumerable in
+the finite study but not available from the frozen LLM logger.  The omission is
+therefore a computability boundary, not an outcome-based estimator choice.
+
+For the original S3 study, paired wins/losses/ties are computed problem
+by problem.  Ten thousand problem-clustered bootstrap resamples preserve all
+three training-seed observations for each sampled problem, and family-wise
+tests use Holm adjustment.  These intervals quantify problem uncertainty
+conditional on three fixed seeds; they are not precise population intervals
+over training seeds.
+
+\subsection{Frozen stability and prospective low-update confirmation}
+
+The prospectively frozen S5 study uses only the best-of-2 search family (two
+candidates, temperature 1.3, epsilon 0.10, beta 1.0, and full expansion) plus a
+K1 control; it does not mix the entropy--Value or Value/PRM search families.
+
+All 72 original search-training branches exceed the pre-specified
+sequence-product clip-fraction ceiling of 0.20.  This remains a failed
+registered gate and prohibited automatic scale-up.  The diagnostic is not a
+token-drop rate: only sign-aligned outside-band samples reach the flat portion
+of the clipped Actor surrogate, while oppositely signed samples retain a
+corrective gradient; Value, entropy, and KL terms may also remain active.
+
+\input{\stableresults}
+
+For S5, 10,000 problem-clustered bootstrap resamples retain both seed
+observations for each sampled problem.  The four estimator-versus-\Ezero{}
+intervals (\Eone{} and \Ethree{} at H8 and H16) are descriptive and unadjusted
+for multiplicity; no S5 family-wise discovery claim is made.
+
+\noindent S5 evaluates K1, \Ezero{}, \Eone{}, and \Ethree{} only; it does not
+include \Efour{}.  Evidence for \Efour{} remains confined to the original S3
+retained-composite study and the separately labeled task-format diagnostics.
+
+\subsection{Sealed transfer contrasts}
+
+Across the original three-seed matrix, no corrected raw-Actor contrast is
+resolved after the frozen multiplicity adjustment, and the retained-composite
+objective likewise does not establish a universal advantage.  The complete
+terminal tables, including every seed and interval, are moved to
+Appendix~\ref{app:s3-terminal}.
+
+\evidencefigure{\figroot/figure_4_no_search_llm_transfer.pdf}{1.0}{%
+No-search K1 Actor transfer on the sealed MATH-500 scalar partition.  The
+terminal renderer shows every seed and problem-clustered interval.}
+
+Detailed retained-composite cost, expansion, and surface-form diagnostics are moved to Appendix~\ref{app:retained-cost}.
+
+
+\section{Task-format and decision-granularity stress tests}
+\label{sec:cross-task}
+Holding trained MATH Actors fixed, H12/H16 raise overall accuracy by 8.31/13.95
+points, almost entirely through higher strict-final coverage; conditional
+accuracy changes by \(-3.15/-2.44\) points with both intervals crossing zero.
+At H16, descriptive within-family raw-Actor contrasts (percentage points;
+problem-clustered 95\% intervals, unadjusted for multiplicity) are: best-of-2
+\Eone{}--\Ezero{} \(0.00[-2.33,+2.33]\) and
+\Ethree{}--\Ezero{} \(+0.67[-1.67,+3.00]\); entropy--Value
+\Eone{}--\Ezero{} \(+4.33[+1.33,+7.67]\) and
+\Ethree{}--\Ezero{} \(+1.67[-1.00,+4.67]\); and Value/PRM
+\Eone{}--\Ezero{} \(-1.33[-4.00,+1.00]\) and
+\Ethree{}--\Ezero{} \(0.00[-2.34,+2.33]\).  Only the entropy--Value
+\Eone{} contrast excludes zero before multiplicity adjustment; it is reported
+as a family-specific diagnostic, not a registered cross-family discovery.
+Longer decoding removes a coverage ambiguity but does not establish a common
+estimator ordering.
+
+Task-specific raw-Actor confirmation is near-null on ARC-Challenge but negative
+for the DROP \Efour{} Actor (Table~\ref{tab:cross-task}). DROP uses its own
+training pool; it is not MATH-to-DROP transfer and does not identify
+retained-composite performance.
+\begin{table}[t]
+\caption{Complete task-specific \Efour{} contrasts, points with 95\% CI.}
+\label{tab:cross-task}\centering\scriptsize
+\begin{tabular}{llllr}\toprule
+Task & Horizon & Baseline & Metric & Difference [95\% CI]\\\midrule
+ARC & H8 & \Ezero & acc. & \(+0.20[-0.23,+0.63]\)\\
+ARC & H8 & \Ethree & acc. & \(+0.14[-0.28,+0.57]\)\\
+ARC & H8 & K1 & acc. & \(+0.28[-0.14,+0.74]\)\\
+ARC & H16 & \Ezero & acc. & \(+0.14[-0.26,+0.57]\)\\
+ARC & H16 & \Ethree & acc. & \(+0.20[-0.17,+0.60]\)\\
+ARC & H16 & K1 & acc. & \(+0.17[-0.26,+0.60]\)\\
+DROP & H8-W96 & \Ezero & F1 & \(-2.53[-2.84,-2.24]\)\\
+DROP & H8-W96 & \Ethree & F1 & \(-1.70[-2.00,-1.40]\)\\
+DROP & H8-W96 & K1 & F1 & \(-3.27[-3.60,-2.94]\)\\\bottomrule
+\end{tabular}
+\end{table}
+A two-seed 512-example diagnostic compares H8-W96 and H16-W48 under the same
+768-token cap. More decisions add 1.2--1.4 states and 18--24 candidate tokens
+per example without resolved composite gain. The original DROP H16-W96 changed
+both decision and token budgets and was stopped; outputs are provenance-only.
+Appendix~\ref{app:task-protocols} gives protocol details and the screening rule.
+
+\section{Related work}
+Adaptive branching allocates compute by entropy, Value, process scores, or
+information gain \citep{he2026bpo,xing2025latr,khomich2026epigtree,li2026patr}.
+Current-policy candidates do not imply retained histories follow raw-Actor
+occupancy. Search distillation and expert iteration deliberately train toward a
+planner \citep{djuhera2026tsr,feng2023tsllm,zhang2024restmcts,anthony2017expert,silver2017alphazero};
+we treat this as a legitimate different target.
+
+Off-policy objectives distinguish behavior and target occupancy, while
+conditional importance sampling, doubly robust estimation, and shrinkage
+control variance \citep{degris2012offpolicy,imani2018emphatic,liu2020conditional,jiang2016doubly,kallus2020double,munos2016retrace,espeholt2018impala}.
+Our contribution is to isolate the behavior law induced jointly by allocation,
+candidate generation, and retention and compare target-matched estimators.
+Continuation methods improve credit but do not correct retention by themselves
+\citep{kazemnejad2024vineppo,he2025trepo}.
+
+\section{Conclusion}
+Search changes the data-generating law before PPO sees a token.  Correcting the
+appropriate target is therefore a statistical estimand choice, not a generic
+recipe for improvement.  Exact trees show that full correction removes bias but
+can incur severe variance, while marginalization and partial correction improve
+finite-sample behavior.  Across the frozen language-model studies, neither the
+original matrix nor the prospective low-update confirmation with token-level
+stability diagnostics establishes a
+resolved corrected-Actor advantage.  Longer horizons repair answer coverage but
+not estimator ordering.  The practical recommendation is to name the
+deployment target, log search propensities, distinguish sequence diagnostics
+from token-level clipping, and require stability and uncertainty checks before
+scaling.
+
+\section{Limitations and broader impact}
+Exact trees lack large-model realism; three original LLM seeds and two S5
+confirmation seeds limit optimizer-level inference, and S5 does not include \Efour{}. MATH scalar extraction,
+ARC multiple choice, and DROP QA omit code and tools. H8 is coverage limited
+and H16 diagnostic. ARC/DROP test task-specific raw Actors; segmentation is
+post hoc. Failed gates and negative/unresolved results preclude universal
+\method{} or safe-scale-up claims. Stronger reasoning retains standard risks.
+
+\section{Reproducibility}
+Code, protocols, manifests, compact evidence, and paper source are publicly
+available under the MIT License at
+\url{https://github.com/SummerRainET2008/071.open-source.p011.cgcs}.
+Protocols, ordered partitions, runners, analyses, and hashes are archived.
+S3 contains 81 training summaries and 15,000 sealed evaluations; the
+prospectively frozen S5 confirmation contains 16 training summaries and 3,200
+sealed H8/H16 evaluations; ARC contains 28,128; paper-eligible DROP H8-W96
+contains 114,432. Failed gates, excluded H16-W96 outputs, per-seed results,
+compute accounting, and audits remain in the artifact. Appendix~\ref{app:audit}
+records the boundary.
+
+\section*{AI use statement}
+
+Generative AI tools were used for language editing, code assistance, and
+diagnostic review.  The authors remain responsible for the experimental
+protocols, execution, verification, scientific interpretation, citations, and
+all claims.
+
+\bibliographystyle{plainnat}
+\bibliography{references_arxiv_v1}
+
+\appendix
+\section{Proofs}\label{app:proofs}
+For Proposition~1, substitute the joint density ratio and sum over \(z\);
+normalization of \(\rho(z\mid x)\) leaves \(p_\pi(x)\). Marginalizing
+\(\mu(x,z)\) gives the second identity, and
+\(W_{\rm marg}h=\mathbb E_\mu[W_{\rm joint}h\mid x]\), so total variance gives
+the inequality. For Proposition~2, condition on \(x\), substitute
+\(W_{\rm joint}=W_{\rm marg}\rho/\mu\), and sum over \(z\). The remaining sum is
+\(1+\chi^2(\rho\Vert\mu)\), minimized when the conditionals agree.
+
+\section{Original S3 terminal tables}\label{app:s3-terminal}
+\input{\terminalresults}
+
+\section{Retained-search cost diagnostics}\label{app:retained-cost}
+Figure~\ref{fig:retained-cost} summarizes retained-composite accuracy, matched
+compute, expansion calibration, and surface-form diversity diagnostics.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=1.0\linewidth]{\figroot/figure_5_retained_search_objective_and_cost_v4.pdf}
+  \caption{Retained-composite accuracy, matched compute,
+  target/source/evaluation expansion, and candidate-to-selected
+  completion-token multipliers, together with surface-form diversity.
+  Exact-text and token-prefix diagnostics are not interpreted as semantic
+  reasoning-path diversity. Source-to-evaluation expansion changes are reported
+  separately from target-to-source calibration error.}
+  \label{fig:retained-cost}
+\end{figure}
+
+
+\section{Audit boundary and terminal completion}\label{app:audit}
+
+This arXiv version uses only closed, hashed experimental artifacts and preserves
+the evidence and claim boundaries of the verified conference-manuscript version.  The S3 runner exited normally, all completion
+markers and ordered IDs passed the frozen analyzer and independent audit,
+Torch-dependent tests reported no skipped dependency path, and the independent
+compute review passed.  The scientific promotion gate nevertheless failed
+because all 72 original search-training branches crossed the frozen
+sequence-product clipping ceiling.  The compute PASS and scientific FAIL are
+therefore both retained.
+
+S5 was prospectively frozen after Version 2 as a narrow prospective low-update
+confirmation with token-level stability diagnostics: best-of-2 search,
+calibration, fallback learning rate, two seeds, four arms, two rounds, and
+H8/H16 evaluation were fixed before execution.  Its 16 evaluation
+files and 16 training summaries passed ordered-ID, configuration, and SHA-256
+checks.  It tests the narrow ambiguity identified after Version 2 but does not
+retroactively change the S3 gate.
+
+S4-X contributes a sealed 24-cell ARC archive with SHA-256
+\texttt{78fc235a...be46}.  S4-Y contributes only its 12 complete H8-W96 cells;
+six complete and six partial H16-W96 cells remain provenance-only under the
+exclusion amendment.  The segmentation experiments are explicitly labeled
+exploratory and cannot amend the registered S3 or S4-Y verdicts.  No further
+larger experiment is licensed by this archive.
+
+\section{Task-format protocol summary}\label{app:task-protocols}
+
+\begin{table}[H]
+  \caption{Task-format evidence included in this arXiv version.  Raw means greedy or
+  task-frozen no-search Actor evaluation; composite retains best-of-2
+  inference search.}
+  \label{tab:cross-task-protocol}
+  \centering
+  \scriptsize
+  \begin{tabular}{lrrrrl}
+    \toprule
+    Study & Seeds & Conditions & Examples/cell & Total & Status \\
+    \midrule
+    MATH S3 raw & 3 & 13 & 200 & 7,800 & sealed \\
+    MATH S3 composite & 3 & 12 & 200 & 7,200 & sealed \\
+    MATH S5 raw & 2 & 8 & 200 & 3,200 & prospective \\
+    ARC-Challenge raw & 3 & 8 & 1,172 & 28,128 & sealed \\
+    DROP H8-W96 raw & 3 & 4 & 9,536 & 114,432 & sealed \\
+    DROP segmentation raw & 2 & 4 & 512 & 4,096 & exploratory \\
+    DROP segmentation composite & 2 & 4 & 512 & 4,096 & exploratory \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+For ARC, the primary registered metric is exact multiple-choice accuracy.  For
+DROP, the primary metric is token-level F1, with EM, answer rate, conditional
+metrics, termination reasons, steps, and completion tokens retained.  All
+contrasts pair identical source IDs within seed and use 10,000 problem-clustered
+bootstrap resamples that keep the seed observations for a sampled problem
+together.
+
+\enlargethispage{4\baselineskip}
+\paragraph{Decision-granularity screening rule.} Before a replicated multi-step horizon matrix, a development pilot must report stopping-step, token, cap-hit, search-call, and time distributions. Increase horizon only if mass approaches the cap or a token-matched segmentation pilot shows a preregistered change; never vary horizon and segment width together when testing decision frequency.
+
+\end{document}

@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "Please cite the accompanying paper; add the arXiv identifier after submission."
+title: "When Search Is Not On-Policy: Reproducibility Code"
+type: software
+version: 1.0.0
+date-released: 2026-11-08
+license: MIT
+repository-code: "https://github.com/SummerRainET2008/071.open-source.p011.cgcs"
+authors:
+  - family-names: "Xia"
+    given-names: "Cyrus Tian"
+    email: "tianxia0209@gmail.com"
+    affiliation: "PAII"
+  - family-names: "He"
+    given-names: "Shenghua"
+    email: "shenghh2015@gmail.com"
+    affiliation: "Amazon"

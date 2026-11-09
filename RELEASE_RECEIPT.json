@@ -1,0 +1,40 @@
+{
+  "schema": "search-policy-mismatch-public-release-receipt-v1",
+  "created_utc": "2026-11-09T05:48:25+00:00",
+  "release_version": "1.0.0",
+  "authors": [
+    {
+      "name": "Cyrus Tian Xia",
+      "affiliation": "PAII"
+    },
+    {
+      "name": "Shenghua He",
+      "affiliation": "Amazon"
+    }
+  ],
+  "validation": {
+    "pytest": {
+      "status": "PASS",
+      "tests": 88
+    },
+    "manifest_verification": "PASS",
+    "exact_tree_cpu_reanalysis": "PASS_BYTE_IDENTICAL",
+    "s5_cpu_reanalysis": "PASS_BYTE_IDENTICAL",
+    "paper_figure_rebuild": "PASS_5_FIGURES_PLUS_V4_VARIANTS",
+    "paper_source_compile": "PASS_14_PAGES_NO_WARNINGS",
+    "secret_scan": "PASS_NO_CREDENTIALS_OR_MODEL_WEIGHTS"
+  },
+  "publication": {
+    "license": "MIT",
+    "repository": "https://github.com/SummerRainET2008/071.open-source.p011.cgcs"
+  },
+  "publication_blockers": [
+    "The arXiv identifier must be added to CITATION.cff after submission."
+  ],
+  "scope": {
+    "cpu_reproduction": "self-contained",
+    "gpu_runners": "included; public model and dataset downloads required",
+    "model_weights_or_checkpoints_redistributed": false,
+    "third_party_datasets_redistributed": false
+  }
+}

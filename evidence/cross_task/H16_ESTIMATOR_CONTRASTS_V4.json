@@ -1,0 +1,124 @@
+{
+  "cluster": "example_id_preserving_three_seed_observations",
+  "metric": "accuracy",
+  "multiplicity": "unadjusted_descriptive",
+  "resamples": 10000,
+  "rows": [
+    {
+      "baseline": "E0_standard_actor_ratio",
+      "bootstrap_p_unadjusted": 1.0,
+      "bootstrap_seed": 660000,
+      "ci95": [
+        -0.023333333333333334,
+        0.023333333333333334
+      ],
+      "difference": 0.0,
+      "family": "best_of_n",
+      "horizon": "H16",
+      "problems": 100,
+      "seeds": [
+        99801,
+        99802,
+        99803
+      ],
+      "target": "E1_trajectory_propensity"
+    },
+    {
+      "baseline": "E0_standard_actor_ratio",
+      "bootstrap_p_unadjusted": 0.7021297870212979,
+      "bootstrap_seed": 660001,
+      "ci95": [
+        -0.016666666666666666,
+        0.03
+      ],
+      "difference": 0.006666666666666667,
+      "family": "best_of_n",
+      "horizon": "H16",
+      "problems": 100,
+      "seeds": [
+        99801,
+        99802,
+        99803
+      ],
+      "target": "E3_step_cumulative_lambda_0.75"
+    },
+    {
+      "baseline": "E0_standard_actor_ratio",
+      "bootstrap_p_unadjusted": 0.0053994600539946005,
+      "bootstrap_seed": 660100,
+      "ci95": [
+        0.013250000000000076,
+        0.07666666666666666
+      ],
+      "difference": 0.043333333333333335,
+      "family": "entropy_value",
+      "horizon": "H16",
+      "problems": 100,
+      "seeds": [
+        99801,
+        99802,
+        99803
+      ],
+      "target": "E1_trajectory_propensity"
+    },
+    {
+      "baseline": "E0_standard_actor_ratio",
+      "bootstrap_p_unadjusted": 0.26717328267173285,
+      "bootstrap_seed": 660101,
+      "ci95": [
+        -0.01,
+        0.04666666666666667
+      ],
+      "difference": 0.016666666666666666,
+      "family": "entropy_value",
+      "horizon": "H16",
+      "problems": 100,
+      "seeds": [
+        99801,
+        99802,
+        99803
+      ],
+      "target": "E3_step_cumulative_lambda_0.75"
+    },
+    {
+      "baseline": "E0_standard_actor_ratio",
+      "bootstrap_p_unadjusted": 0.34556544345565443,
+      "bootstrap_seed": 660200,
+      "ci95": [
+        -0.04,
+        0.01
+      ],
+      "difference": -0.013333333333333334,
+      "family": "value_value",
+      "horizon": "H16",
+      "problems": 100,
+      "seeds": [
+        99801,
+        99802,
+        99803
+      ],
+      "target": "E1_trajectory_propensity"
+    },
+    {
+      "baseline": "E0_standard_actor_ratio",
+      "bootstrap_p_unadjusted": 1.0,
+      "bootstrap_seed": 660201,
+      "ci95": [
+        -0.023416666666666593,
+        0.023333333333333334
+      ],
+      "difference": 0.0,
+      "family": "value_value",
+      "horizon": "H16",
+      "problems": 100,
+      "seeds": [
+        99801,
+        99802,
+        99803
+      ],
+      "target": "E3_step_cumulative_lambda_0.75"
+    }
+  ],
+  "schema": "cgcs-s4-h16-estimator-contrasts-v4",
+  "status": "cpu_analysis_of_closed_hashed_inputs"
+}

@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "search-policy-mismatch"
+version = "1.0.0"
+description = "Reproducibility code for search-induced policy mismatch in language-model RL"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  {name = "Cyrus Tian Xia", email = "tianxia0209@gmail.com"},
+  {name = "Shenghua He", email = "shenghh2015@gmail.com"},
+]
+dependencies = ["numpy>=1.24,<3"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4,<10"]
+paper = ["matplotlib>=3.8,<4"]
+llm = [
+  "accelerate>=1.0,<2",
+  "pydantic>=2.7,<3",
+  "torch>=2.7,<2.8",
+  "transformers>=4.55,<5",
+]
+train = [
+  "bitsandbytes>=0.45,<1",
+  "peft>=0.14,<1",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

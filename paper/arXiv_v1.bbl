@@ -1,0 +1,122 @@
+\begin{thebibliography}{19}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Anthony et~al.(2017)Anthony, Tian, and Barber]{anthony2017expert}
+Thomas Anthony, Zheng Tian, and David Barber.
+\newblock Thinking fast and slow with deep learning and tree search.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2017.
+\newblock URL \url{https://proceedings.neurips.cc/paper/2017/hash/d8e1344e27a5b08cdfd5d027d9b8d6de-Abstract.html}.
+
+\bibitem[Degris et~al.(2012)Degris, White, and Sutton]{degris2012offpolicy}
+Thomas Degris, Martha White, and Richard~S. Sutton.
+\newblock Off-policy actor-critic.
+\newblock In \emph{Proceedings of the 29th International Conference on Machine Learning}, 2012.
+\newblock URL \url{https://arxiv.org/abs/1205.4839}.
+
+\bibitem[Djuhera et~al.(2026)Djuhera, Kadhe, Ahmed, Zawad, Ludwig, and Boche]{djuhera2026tsr}
+Aladin Djuhera, Swanand Kadhe, Farhan Ahmed, Syed Zawad, Heiko Ludwig, and Holger Boche.
+\newblock {TSR}: Trajectory-search rollouts for multi-turn {RL} of {LLM} agents.
+\newblock \emph{arXiv preprint arXiv:2602.11767}, 2026.
+\newblock URL \url{https://arxiv.org/abs/2602.11767}.
+
+\bibitem[Espeholt et~al.(2018)Espeholt, Soyer, Munos, Simonyan, Mnih, Ward, Doron, Firoiu, Harley, Dunning, Legg, and Kavukcuoglu]{espeholt2018impala}
+Lasse Espeholt, Hubert Soyer, R{\'e}mi Munos, Karen Simonyan, Volodymyr Mnih, Tom Ward, Yotam Doron, Vlad Firoiu, Tim Harley, Iain Dunning, Shane Legg, and Koray Kavukcuoglu.
+\newblock {IMPALA}: Scalable distributed deep-{RL} with importance weighted actor-learner architectures.
+\newblock In \emph{Proceedings of the 35th International Conference on Machine Learning}, 2018.
+\newblock URL \url{https://proceedings.mlr.press/v80/espeholt18a.html}.
+
+\bibitem[Feng et~al.(2023)Feng, Wan, Wen, McAleer, Wen, Zhang, and Wang]{feng2023tsllm}
+Xidong Feng, Ziyu Wan, Muning Wen, Stephen~Marcus McAleer, Ying Wen, Weinan Zhang, and Jun Wang.
+\newblock Alphazero-like tree-search can guide large language model decoding and training.
+\newblock \emph{arXiv preprint arXiv:2309.17179}, 2023.
+\newblock URL \url{https://arxiv.org/abs/2309.17179}.
+
+\bibitem[He et~al.(2026)He, Chen, Zhang, and Liu]{he2026bpo}
+Bowei He, Yankai Chen, Xiaokun Zhang, and Xue Liu.
+\newblock Branching policy optimization: Sandbox-native language agent reinforcement learning.
+\newblock \emph{arXiv preprint arXiv:2607.14171}, 2026.
+\newblock URL \url{https://arxiv.org/abs/2607.14171}.
+
+\bibitem[He et~al.(2025)He, Xia, Zhou, and Wei]{he2025trepo}
+Shenghua He, Tian Xia, Xuan Zhou, and Hui Wei.
+\newblock Response-level rewards are all you need for online reinforcement learning in {LLM}s: A mathematical perspective.
+\newblock \emph{arXiv preprint arXiv:2506.02553}, 2025.
+\newblock URL \url{https://arxiv.org/abs/2506.02553}.
+
+\bibitem[Imani et~al.(2018)Imani, Graves, and White]{imani2018emphatic}
+Ehsan Imani, Eric Graves, and Martha White.
+\newblock An off-policy policy gradient theorem using emphatic weightings.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2018.
+\newblock URL \url{https://proceedings.neurips.cc/paper/2018/hash/488e4104520c6aab692863cc1dba45af-Abstract.html}.
+
+\bibitem[Jiang and Li(2016)]{jiang2016doubly}
+Nan Jiang and Lihong Li.
+\newblock Doubly robust off-policy value evaluation for reinforcement learning.
+\newblock In \emph{Proceedings of the 33rd International Conference on Machine Learning}, 2016.
+\newblock URL \url{https://proceedings.mlr.press/v48/jiang16.html}.
+
+\bibitem[Kallus and Uehara(2020)]{kallus2020double}
+Nathan Kallus and Masatoshi Uehara.
+\newblock Double reinforcement learning for efficient off-policy evaluation in markov decision processes.
+\newblock In \emph{Proceedings of the 37th International Conference on Machine Learning}, 2020.
+\newblock URL \url{https://proceedings.mlr.press/v119/kallus20b.html}.
+
+\bibitem[Kazemnejad et~al.(2024)Kazemnejad, Aghajohari, Portelance, Sordoni, Reddy, Courville, and Le~Roux]{kazemnejad2024vineppo}
+Amirhossein Kazemnejad, Milad Aghajohari, Eva Portelance, Alessandro Sordoni, Siva Reddy, Aaron Courville, and Nicolas Le~Roux.
+\newblock {VinePPO}: Unlocking {RL} potential for {LLM} reasoning through refined credit assignment.
+\newblock \emph{arXiv preprint arXiv:2410.01679}, 2024.
+\newblock URL \url{https://arxiv.org/abs/2410.01679}.
+
+\bibitem[Khomich et~al.(2026)Khomich, Hermansson, and Hakimi]{khomich2026epigtree}
+Nikita Khomich, Leopold Hermansson, and Ido Hakimi.
+\newblock {EPIG-Tree}: Compute-optimal branching for gradient-efficient reinforcement learning.
+\newblock \emph{arXiv preprint arXiv:2609.20004}, 2026.
+\newblock URL \url{https://arxiv.org/abs/2609.20004}.
+
+\bibitem[Li et~al.(2026)Li, Li, Zhang, Yu, Lin, Jin, Guan, Liu, Li, Yin, and Shang]{li2026patr}
+Xintong Li, Sha Li, Yuwei Zhang, Changlong Yu, Rongmei Lin, Hongye Jin, Shuyi Guan, Xin Liu, Linwei Li, Qingyu Yin, and Jingbo Shang.
+\newblock Process reward informed tree rollout for effective multi-turn {RL}.
+\newblock \emph{arXiv preprint arXiv:2607.15610}, 2026.
+\newblock URL \url{https://arxiv.org/abs/2607.15610}.
+
+\bibitem[Liu et~al.(2020)Liu, Bacon, and Brunskill]{liu2020conditional}
+Qiang Liu, Pierre-Luc Bacon, and Emma Brunskill.
+\newblock Breaking the curse of horizon: Infinite-horizon off-policy estimation.
+\newblock In \emph{Proceedings of the 37th International Conference on Machine Learning}, 2020.
+\newblock URL \url{https://proceedings.mlr.press/v119/liu20a.html}.
+
+\bibitem[Munos et~al.(2016)Munos, Stepleton, Harutyunyan, and Bellemare]{munos2016retrace}
+R{\'e}mi Munos, Tom Stepleton, Anna Harutyunyan, and Marc~G. Bellemare.
+\newblock Safe and efficient off-policy reinforcement learning.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2016.
+\newblock URL \url{https://proceedings.neurips.cc/paper/2016/hash/c3992e9a68c5ae12bd18488bc579b30d-Abstract.html}.
+
+\bibitem[Schulman et~al.(2017)Schulman, Wolski, Dhariwal, Radford, and Klimov]{schulman2017ppo}
+John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov.
+\newblock Proximal policy optimization algorithms.
+\newblock In \emph{arXiv preprint arXiv:1707.06347}, 2017.
+\newblock URL \url{https://arxiv.org/abs/1707.06347}.
+
+\bibitem[Silver et~al.(2017)Silver, Schrittwieser, Simonyan, Antonoglou, Huang, Guez, Hubert, Baker, Lai, Bolton, Chen, Lillicrap, Hui, Sifre, van~den Driessche, Graepel, and Hassabis]{silver2017alphazero}
+David Silver, Julian Schrittwieser, Karen Simonyan, Ioannis Antonoglou, Aja Huang, Arthur Guez, Thomas Hubert, Lucas Baker, Matthew Lai, Adrian Bolton, Yutian Chen, Timothy Lillicrap, Fan Hui, Laurent Sifre, George van~den Driessche, Thore Graepel, and Demis Hassabis.
+\newblock Mastering the game of go without human knowledge.
+\newblock \emph{Nature}, 550:\penalty0 354--359, 2017.
+\newblock \doi{10.1038/nature24270}.
+
+\bibitem[Xing et~al.(2025)Xing, Wang, Yang, Dai, and Ren]{xing2025latr}
+Shangyu Xing, Siyuan Wang, Chenyuan Yang, Xinyu Dai, and Xiang Ren.
+\newblock Lookahead tree-based rollouts for enhanced trajectory-level exploration in reinforcement learning with verifiable rewards.
+\newblock \emph{arXiv preprint arXiv:2510.24302}, 2025.
+\newblock URL \url{https://arxiv.org/abs/2510.24302}.
+
+\bibitem[Zhang et~al.(2024)Zhang, Zhoubian, Hu, Yue, Dong, and Tang]{zhang2024restmcts}
+Dan Zhang, Sining Zhoubian, Ziniu Hu, Yisong Yue, Yuxiao Dong, and Jie Tang.
+\newblock {ReST-MCTS*}: {LLM} self-training via process reward guided tree search.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2024.
+\newblock URL \url{https://arxiv.org/abs/2406.03816}.
+
+\end{thebibliography}
