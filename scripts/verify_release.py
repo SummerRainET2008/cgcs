@@ -24,6 +24,7 @@ actual_files = {
     and "reproduced" not in path.parts
     and ".pytest_cache" not in path.parts
     and ".venv" not in path.parts
+    and not any(part.endswith(".egg-info") for part in path.parts)
     and "__pycache__" not in path.parts
 }
 if actual_files != set(expected):
